@@ -1,0 +1,198 @@
+---
+title: "Analysis"
+author: "Sam Milnes"
+date: "3/15/2022"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Unemployment Rate = x(independent), market = y(dependent)
+
+```{r}
+#attach(S_PDataFINAL)
+#Data Every month from 3/1/2001 to 5/1/2003
+
+Mode = function(x, na.rm = FALSE){
+  if(na.rm){
+    x = x[!is.na(x)]
+  }
+  ux = unique(x)
+  return(ux[which.max(tabulate(match(x, ux)))])
+}
+f = table(S_PDataFINAL$OpenPrice)
+which(f==max(f))
+
+```
+
+```{r}
+
+SP_mean = mean(S_PDataFINAL$OpenPrice)
+SP_median = median(S_PDataFINAL$OpenPrice)
+SP_mode = Mode(S_PDataFINAL$OpenPrice)
+SP_standardDeviation = sd(S_PDataFINAL$OpenPrice)
+SP_variance = var(S_PDataFINAL$OpenPrice)
+
+hist(S_PDataFINAL$OpenPrice,
+     main = "Histogram for S&P 500 Open Price",
+     xlab = "S&P 500 Price",
+     freq = F,
+     col = 'green4', border = 'black',
+     breaks = 10,
+     bg = "grey80")
+       
+lines(density(S_PDataFINAL$OpenPrice))
+
+
+
+boxplot(S_PDataFINAL$OpenPrice,
+        names = c(" S&P 500 Open Price"),
+        show.names = TRUE, main = "Boxplot for S&P 500 Open Price", 
+        col = 'green', border = 'blue',
+        ylab = 'Price  ($)')
+
+plot(x = S_PDataFINAL$OpenPrice, ylab = "S&P 500 Price($)",
+     main = "Line Graph - S&P 500 Price ($)",
+     type = 'l', col = 'green')
+#The x variable in this line graph is just the order of the data. 
+plot(x = S_PDataFINAL$UnemploymentRate, ylab = "Unemployment Rate (%)",
+     main = "Line Graph - US Unemployment",
+     type = 'l', col = 'green')
+#The x variable in this line graph is just the order of the data. 
+
+```
+
+```{r}
+plot(S_PDataFINAL$UnemploymentRate,S_PDataFINAL$OpenPrice,
+     main = "S&P 500 Price vs US Unemployment Rate Scatterplot",
+     xlab = "US Unemployment Rate (%)",
+     ylab = "S&P 500 Price ($)",
+     pch = 20,
+     col = 'green4',
+     bg = "grey80")sur
+abline(lm(S_PDataFINAL$OpenPrice ~ S_PDataFINAL$UnemploymentRate), 
+       col = "black",)
+legend("topright", legend = c("y = -103.58x + 2318.49"), bty = 'n')
+
+LinearModelUnemploymentPrice = lm(S_PDataFINAL$OpenPrice ~ S_PDataFINAL$UnemploymentRate)
+summary(LinearModelUnemploymentPrice) #gives values for liner equation
+#y = (slope)* x + y-intercept
+#y = -103.58x + 2318.49 <- estimated regression line equation
+
+```
+
+
+Approximate the dependent variable (y) value by choosing a value for the independent variable (x)
+x = 2
+```{r}
+approximateY = -103.58*2 + 2318.49
+```
+When the unemployment rate is 2%, we can get an approximate value of 2111.33 for the S&P500 price.
+
+
+y = 1000
+
+y = -103.58x + 2318.49 -> 1000 = -103.58x + 2318.49 -> -1318.49 = -103.58x -> x = -1318.49 / -103.58
+```{r}
+approximateX = -1318.49 / -103.58
+```
+When the S&P price is 1000, we can get an approximate value of 12.7% for the unemployment rate.
+
+```{r}
+r_value = cor(S_PDataFINAL$UnemploymentRate,S_PDataFINAL$OpenPrice)
+```
+
+We get a negative correlation coefficient, which for our data means that our two variables,
+x and y, are moving in opposite directions of each other.
+More or less it means that the variables are an inverse correlation, they do not move in the same direction.
+Suggests that there is a weak negative correlation between S&P500 Price (Y) and Unemployment Rate (X)
+
+```{r}
+rSquared_value = (r_value * r_value)
+```
+From our coefficient of determination, we can see that almost 8% of our dependent
+variable is caused or directly related to our independent variable.
+Accounts for the variability in our y-variable that is attributed to the relationship determined by our
+linear model between our x-variable and y-variable.
+
+8% of the variability in the s&P 500 can be attributed to the linear model relationship between
+the unemployment rate and the S&P 500 price.
+
+
+```{r}
+qqnorm(S_PDataFINAL$OpenPrice, pch =20, frame = FALSE, col = "green4", main = "Normal QQ-Plot for S&P 500 Price")
+
+#Adding a reference line
+qqline(S_PDataFINAL$OpenPrice, col = "black", lwd = 1)
+```
+From the normal QQ plot, we can see that the dependent variable is overall,
+normal distributed with some outlying points.
+skews to the left first(pulls below) and then skews to the right(pulls above)
+
+
+
+#95% Confidence level - Create Margin of Error for our dependent variable (Y)
+```{r}
+price_sample_sizeN = nrow(S_PDataFINAL) #Finds population size
+price_population_meanX = mean(S_PDataFINAL$OpenPrice) #Finds population mean
+
+price_sample_var = var(S_PDataFINAL$OpenPrice) #Finds the sample variance
+price_sample_sd = sd(S_PDataFINAL$OpenPrice) #Finds the sample standard deviation
+
+#For Z, we need POPULATION var/sd, so we will switch using formulas
+price_population_var = (((price_sample_sizeN - 1) / price_sample_sizeN) * price_sample_var)
+price_population_sd = sqrt(price_population_var)
+
+#Find the Z-Critial Values
+price_alpha_95 = 0.05 #95% = (1-ALPHA) * 100%
+price_z_CV_95 = qnorm(1-price_alpha_95/2)
+
+#Creating Margin of Error
+price_z_ME_95 = price_z_CV_95 * (price_population_sd / sqrt(price_sample_sizeN))
+
+#Finds 95% CI
+price_lower_bound_z_95 = price_population_meanX - price_z_ME_95 
+price_upper_bound_z_95 = price_population_meanX + price_z_ME_95
+cat("The 95% confidence interval for the true population mean price of S&P500 is: (",
+    price_lower_bound_z_95, "," , price_upper_bound_z_95,").")
+```
+When we have a 95% confidence level, the length of the interval is around 181.2.
+We are 95% confident that the population S&P500 Price is between the interval of 1596.3 and 1777.5.
+
+
+```{r}
+#95% Confidence level - Create Margin of Error for our dependent variable (Y)
+unemployment_sample_sizeN = nrow(S_PDataFINAL) #Finds population size
+unemployment_population_meanX = mean(S_PDataFINAL$UnemploymentRate) #Finds population mean
+
+unemployment_sample_var = var(S_PDataFINAL$UnemploymentRate) #Finds the sample variance
+unemployment_sample_sd = sd(S_PDataFINAL$UnemploymentRate) #Finds the sample standard deviation
+
+#For Z, we need POPULATION var/sd, so we will switch using formulas
+unemployment_population_var = (((unemployment_sample_sizeN - 1) / unemployment_sample_sizeN) * unemployment_sample_var)
+unemployment_population_sd = sqrt(unemployment_population_var)
+
+#Find the Z-Critial Values
+unemployment_alpha_95 = 0.05 #95% = (1-ALPHA) * 100%
+unemployment_z_CV_95 = qnorm(1-unemployment_alpha_95/2)
+
+#Creating Margin of Error
+unemployment_z_ME_95 = unemployment_z_CV_95 * (unemployment_population_sd / sqrt(unemployment_sample_sizeN))
+
+#Finds 95% CI
+unemployment_lower_bound_z_95 = unemployment_population_meanX - unemployment_z_ME_95 
+unemployment_upper_bound_z_95 = unemployment_population_meanX + unemployment_z_ME_95
+cat("The 95% confidence interval for the true population mean unemployment rate is: (",
+    unemployment_lower_bound_z_95, "," , unemployment_upper_bound_z_95,").")
+```
+When we have a 95% confidence level, the length of the interval is around .5
+We are 95% confident that the population unemployment rate is between the interval of 5.8 and 6.3.
+
+
+
+
+
